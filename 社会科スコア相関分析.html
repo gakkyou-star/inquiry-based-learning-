@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社会科スコア低下の要因分析 ― 教科横断的相関とデータサイエンス的考察</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg: #0f1117;
+  --surface: #171b26;
+  --surface2: #1e2330;
+  --border: #2a3040;
+  --text: #e2e8f4;
+  --text-dim: #7a8599;
+  --text-mid: #b0bccf;
+  --accent: #4a9eff;
+  --accent2: #34d399;
+  --accent3: #f59e0b;
+  --accent4: #f87171;
+  --accent5: #a78bfa;
+  --accent6: #fb923c;
+  --grid: rgba(74,158,255,0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* ── GRID BACKGROUND ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.layer { position: relative; z-index: 1; }
+
+/* ── HEADER ── */
+.header {
+  padding: 48px 28px 36px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(74,158,255,0.06) 0%, transparent 100%);
+}
+.header-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+.header h1 {
+  font-size: clamp(20px, 3.5vw, 30px);
+  font-weight: 900;
+  line-height: 1.3;
+  max-width: 860px;
+  margin-bottom: 16px;
+}
+.header h1 em { color: var(--accent); font-style: normal; }
+.header-desc {
+  font-size: clamp(16px, 1.8vw, 16px);
+  color: var(--text-mid);
+  max-width: 740px;
+  margin-bottom: 24px;
+}
+.header-tags {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.htag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+.htag-blue { color: var(--accent); border-color: rgba(74,158,255,0.4); background: rgba(74,158,255,0.08); }
+.htag-green { color: var(--accent2); border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.08); }
+.htag-amber { color: var(--accent3); border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.08); }
+
+/* ── CONTAINER ── */
+.container { max-width: 1200px; margin: 0 auto; padding: 36px 20px 60px; }
+
+/* ── SECTION HEADER ── */
+.sec-head {
+  display: flex; align-items: baseline; gap: 14px;
+  margin-bottom: 22px; margin-top: 48px;
+}
+.sec-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  padding: 3px 8px;
+  border: 1px solid rgba(74,158,255,0.3);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.sec-title {
+  font-size: clamp(17px, 2.2vw, 21px);
+  font-weight: 700;
+  color: var(--text);
+}
+.sec-title em { color: var(--accent3); font-style: normal; }
+
+/* ── FINDING BOX ── */
+.finding {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  border-left: 4px solid;
+}
+.finding-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.finding h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+.finding p, .finding li { font-size: 16px; color: var(--text-mid); line-height: 1.7; }
+.finding ul { padding-left: 18px; margin-top: 6px; }
+.finding .val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ── GRID ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+@media (max-width: 860px) { .grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.card-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 14px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  color: var(--text-mid);
+}
+.card-title strong { color: var(--text); }
+
+/* ── CORRELATION MATRIX ── */
+.corr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.corr-table th {
+  background: var(--surface2);
+  padding: 8px 10px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+}
+.corr-table td {
+  padding: 7px 10px;
+  text-align: center;
+  border: 1px solid var(--border);
+  font-size: 16px;
+  font-weight: 600;
+}
+.corr-table .row-label {
+  text-align: left;
+  font-size: 16px;
+  color: var(--text-mid);
+  background: var(--surface2);
+}
+
+/* ── BAR SPARK ── */
+.spark-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.spark-label {
+  width: 70px; font-size: 16px; font-weight: 700;
+  flex-shrink: 0; text-align: right; color: var(--text-mid);
+}
+.spark-bar-wrap {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  height: 20px;
+  overflow: hidden;
+  position: relative;
+}
+.spark-bar {
+  height: 100%;
+  border-radius: 4px;
+  display: flex; align-items: center;
+  padding-left: 8px;
+  transition: width 1s ease;
+}
+.spark-bar span {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+/* ── SCATTER SVG EMBEDDED ── */
+.chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  overflow: hidden;
+}
+.chart-wrap svg { width: 100%; height: auto; overflow: visible; }
+
+/* ── PROFILE CARDS ── */
+.profile-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  border-top: 3px solid;
+}
+.profile-icon { font-size: 28px; margin-bottom: 8px; }
+.profile-type { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.profile-count { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 600; margin-bottom: 6px; }
+.profile-desc { font-size: 16px; color: var(--text-mid); line-height: 1.6; }
+.profile-scores {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+}
+.score-chip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+}
+
+/* ── INSIGHT CALLOUT ── */
+.callout {
+  background: linear-gradient(135deg, rgba(74,158,255,0.08) 0%, rgba(52,211,153,0.05) 100%);
+  border: 1px solid rgba(74,158,255,0.25);
+  border-radius: 10px;
+  padding: 22px 24px;
+  margin: 16px 0;
+}
+.callout-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; letter-spacing: 2px;
+  color: var(--accent); margin-bottom: 10px; text-transform: uppercase;
+}
+.callout h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+.callout h3 em { color: var(--accent2); font-style: normal; }
+.callout p, .callout li { font-size: 16px; color: var(--text-mid); line-height: 1.7; }
+.callout ul { padding-left: 18px; margin-top: 6px; }
+
+/* ── RECOMMEND CARDS ── */
+.rec-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.rec-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+}
+.rec-card.r1::before { background: var(--accent4); }
+.rec-card.r2::before { background: var(--accent3); }
+.rec-card.r3::before { background: var(--accent2); }
+.rec-card.r4::before { background: var(--accent5); }
+.rec-priority {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px; letter-spacing: 2px;
+  margin-bottom: 8px; text-transform: uppercase;
+}
+.rec-card h4 { font-size: 16px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; }
+.rec-card p, .rec-card li { font-size: 16px; color: var(--text-mid); line-height: 1.6; }
+.rec-card ul { padding-left: 16px; margin-top: 4px; }
+
+/* ── HEAT VALUE ── */
+.hv-90 { background: rgba(248,113,113,0.55); color: #fff; }
+.hv-80 { background: rgba(251,146,60,0.5); color: #fff; }
+.hv-70 { background: rgba(245,158,11,0.4); color: #fff; }
+.hv-60 { background: rgba(52,211,153,0.35); color: #fff; }
+.hv-50 { background: rgba(74,158,255,0.3); color: var(--text); }
+.hv-self { background: rgba(255,255,255,0.12); color: var(--text-dim); }
+
+/* ── BAND TABLE ── */
+.band-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.band-table th {
+  background: var(--surface2);
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  font-size: 16px;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.5px;
+}
+.band-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 16px;
+  color: var(--text-mid);
+}
+.band-table td strong { color: var(--text); }
+.band-table tr:last-child td { border-bottom: none; }
+
+/* ── PARTIAL CORR ── */
+.partial-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.partial-row:last-child { border-bottom: none; }
+.partial-subj { width: 60px; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+.partial-bar-wrap { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 18px; }
+.partial-bar { height: 100%; border-radius: 4px; min-width: 4px; position: relative; }
+.partial-val { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 600; margin-left: 8px; white-space: nowrap; }
+.partial-sig { font-size: 16px; color: var(--accent3); font-family: 'IBM Plex Mono', monospace; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 24px;
+  text-align: center;
+  font-size: 16px;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  margin-top: 40px;
+}
+footer strong { color: var(--text-mid); }
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+/* ── ANNOTATION BOX ── */
+.anno {
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-left: 4px solid var(--accent3);
+  border-radius: 6px;
+  padding: 14px 18px;
+  font-size: 16px;
+  color: var(--text-mid);
+  margin-top: 14px;
+}
+.anno strong { color: var(--accent3); }
+</style>
+</head>
+<body>
+<div class="layer">
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="header layer">
+  <div class="header-eyebrow">ANALYSIS REPORT / DATA SCIENCE</div>
+  <h1>社会科スコア低下の要因を<em>データサイエンス</em>で読み解く<br>― 教科横断的相関と授業改善への示唆 ―</h1>
+  <p class="header-desc">
+    中学校34名の学力調査データに対して相関分析・偏相関分析・生徒プロファイル分類を実施。<br>
+    「社会科が低い本当の理由」と「どの教科との連携が授業改善に効くか」を統計的に検証する。
+  </p>
+  <div class="header-tags">
+    <span class="htag htag-blue">n = 34名（小中共通）</span>
+    <span class="htag htag-green">Pearson相関係数 + 偏相関分析</span>
+    <span class="htag htag-amber">*** p&lt;0.001　** p&lt;0.01　* p&lt;0.05</span>
+  </div>
+</header>
+
+<div class="container layer">
+
+<!-- ═══════════════ SECTION 1: 相関行列 ═══════════════ -->
+<div class="sec-head">
+  <span class="sec-num">ANALYSIS 01</span>
+  <span class="sec-title">中学校 全教科間の<em>相関行列</em></span>
+</div>
+
+<div class="callout">
+  <div class="callout-label">KEY FINDING</div>
+  <h3>社会科は<em>数学・理科と最も強く連動</em>し、国語との連動は相対的に弱い</h3>
+  <p>
+    教科間の相関を見ると、社会と数学の r = <strong style="color:#f87171">0.857</strong>、社会と理科の r = <strong style="color:#f87171">0.838</strong> は統計的に非常に強い（p&lt;0.001）。
+    一方、社会と国語の相関は r = 0.691 と、他教科に比べて最も低い。これは「社会科の問題を解くには、国語よりも数学・理科的な<strong>論理的整理能力</strong>がより重要」であることを示唆している。
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-title"><strong>教科間相関係数（Pearson r）― ヒートマップ</strong>　セルの濃さが相関の強さを表す</div>
+  <div style="overflow-x:auto">
+  <table class="corr-table">
+    <thead>
+      <tr>
+        <th style="width:80px">　</th>
+        <th>国 語</th>
+        <th style="background:rgba(74,158,255,0.12);color:#4a9eff">社 会</th>
+        <th>数 学</th>
+        <th>理 科</th>
+        <th>英 語</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="row-label">国 語</td>
+        <td class="hv-self">1.000</td>
+        <td class="hv-50">0.691***</td>
+        <td class="hv-50">0.706***</td>
+        <td class="hv-50">0.684***</td>
+        <td class="hv-50">0.700***</td>
+      </tr>
+      <tr style="background:rgba(74,158,255,0.04)">
+        <td class="row-label" style="color:#4a9eff;font-weight:700">社 会</td>
+        <td class="hv-50">0.691***</td>
+        <td class="hv-self">1.000</td>
+        <td class="hv-90" style="color:#fff;font-size: 16px">0.857***</td>
+        <td class="hv-80">0.838***</td>
+        <td class="hv-70">0.805***</td>
+      </tr>
+      <tr>
+        <td class="row-label">数 学</td>
+        <td class="hv-50">0.706***</td>
+        <td class="hv-90">0.857***</td>
+        <td class="hv-self">1.000</td>
+        <td class="hv-80">0.833***</td>
+        <td class="hv-70">0.845***</td>
+      </tr>
+      <tr>
+        <td class="row-label">理 科</td>
+        <td class="hv-50">0.684***</td>
+        <td class="hv-80">0.838***</td>
+        <td class="hv-80">0.833***</td>
+        <td class="hv-self">1.000</td>
+        <td class="hv-70">0.791***</td>
+      </tr>
+      <tr>
+        <td class="row-label">英 語</td>
+        <td class="hv-50">0.700***</td>
+        <td class="hv-70">0.805***</td>
+        <td class="hv-70">0.845***</td>
+        <td class="hv-70">0.791***</td>
+        <td class="hv-self">1.000</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="anno">
+    <strong>読み方の注意：</strong>全教科が高相関（r=0.68〜0.86）なのは、「全般的な学力水準」という共通因子が存在するためです。この表だけでは「国語が社会に影響を与えている」とは言えません。それを解明するのが次の<strong>偏相関分析</strong>です。
+  </div>
+</div>
+
+<!-- ═══════════════ SECTION 2: 偏相関 ═══════════════ -->
+<div class="sec-head">
+  <span class="sec-num">ANALYSIS 02</span>
+  <span class="sec-title"><em>偏相関分析</em> ― 「真の影響力」を分離する</span>
+</div>
+
+<div class="callout" style="border-color:rgba(52,211,153,0.25);background:linear-gradient(135deg,rgba(52,211,153,0.06),rgba(74,158,255,0.04))">
+  <div class="callout-label" style="color:var(--accent2)">DECISIVE FINDING</div>
+  <h3>他教科を制御すると、<em>社会を独立に予測するのは「数学」と「理科」だけ</em></h3>
+  <p>
+    他の3教科のスコアを統計的に除いた後（偏相関）、社会科スコアを有意に予測するのは
+    <strong style="color:#f59e0b">数学（偏相関 r = 0.369, p = 0.032*）</strong> と
+    <strong style="color:#34d399">理科（偏相関 r = 0.363, p = 0.035*）</strong> のみ。
+    <br>国語は偏相関 r = 0.113（非有意）、英語も r = 0.164（非有意）となった。
+    つまり<strong>「国語が得意だから社会が得意」は見かけ上の相関</strong>であり、本質的なつながりではない。
+  </p>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title"><strong>偏相関係数</strong> ― 他3教科を制御した「純粋な社会への寄与」</div>
+    <div style="margin-top:4px">
+      <div class="partial-row">
+        <div class="partial-subj" style="color:#f87171">数 学</div>
+        <div class="partial-bar-wrap">
+          <div class="partial-bar" style="background:rgba(248,113,113,0.55);width:calc(0.369/0.5*100%)"></div>
+        </div>
+        <div class="partial-val" style="color:#f87171">r = 0.369</div>
+        <div class="partial-sig">*</div>
+      </div>
+      <div class="partial-row">
+        <div class="partial-subj" style="color:#34d399">理 科</div>
+        <div class="partial-bar-wrap">
+          <div class="partial-bar" style="background:rgba(52,211,153,0.55);width:calc(0.363/0.5*100%)"></div>
+        </div>
+        <div class="partial-val" style="color:#34d399">r = 0.363</div>
+        <div class="partial-sig">*</div>
+      </div>
+      <div class="partial-row">
+        <div class="partial-subj" style="color:#a78bfa">英 語</div>
+        <div class="partial-bar-wrap">
+          <div class="partial-bar" style="background:rgba(167,139,250,0.3);width:calc(0.164/0.5*100%)"></div>
+        </div>
+        <div class="partial-val" style="color:#6b7280">r = 0.164</div>
+        <div class="partial-sig" style="color:#6b7280">n.s.</div>
+      </div>
+      <div class="partial-row">
+        <div class="partial-subj" style="color:#6b7280">国 語</div>
+        <div class="partial-bar-wrap">
+          <div class="partial-bar" style="background:rgba(107,114,128,0.25);width:calc(0.113/0.5*100%)"></div>
+        </div>
+        <div class="partial-val" style="color:#6b7280">r = 0.113</div>
+        <div class="partial-sig" style="color:#6b7280">n.s.</div>
+      </div>
+    </div>
+    <div class="anno" style="margin-top:14px">
+      <strong>n.s. = 有意差なし。</strong>国語のr=0.113は統計的にゼロと区別がつかない。
+      「国語と社会の相関（r=0.691）」は全般的学力の共通因子が生み出す擬似相関であった。
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><strong>なぜ数学・理科が社会に影響するのか</strong> ― 認知的解釈</div>
+    <div style="margin-top:8px">
+      <div class="finding" style="border-color:var(--accent3);background:rgba(245,158,11,0.05);margin-bottom:12px">
+        <div class="finding-label" style="color:var(--accent3)">仮説 A — 論理的情報処理</div>
+        <p>数学・理科では「情報を構造化して論理的に整理する能力」が求められる。社会科の資料・グラフ問題や論述問題も、同じ認知処理を使う。<strong>論理的思考の基盤が社会科の「知識活用」を支えている</strong>可能性。</p>
+      </div>
+      <div class="finding" style="border-color:var(--accent2);background:rgba(52,211,153,0.05)">
+        <div class="finding-label" style="color:var(--accent2)">仮説 B — 学習方略の転移</div>
+        <p>IB MYPの理科・数学では「仮説→観察→考察→まとめ」の探究サイクルを繰り返す。<strong>この学習方略が社会科の歴史・地理分析にも転移</strong>しやすい構造になっている可能性。一方、国語の言語処理は社会特有の地名・年号・因果関係の記憶とは別回路。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SECTION 3: 観点別 ═══════════════ -->
+<div class="sec-head">
+  <span class="sec-num">ANALYSIS 03</span>
+  <span class="sec-title">観点別分析 ― 社会「<em>知識</em>」と「<em>思考</em>」、どちらが引っ張っているのか</span>
+</div>
+
+<div class="card" style="margin-bottom:16px">
+  <div class="card-title"><strong>各教科観点 × 社会の知識・技能 / 思考・判断・表現</strong>（単純相関 r）</div>
+  <div style="overflow-x:auto">
+  <table class="band-table">
+    <thead>
+      <tr>
+        <th>教科観点</th>
+        <th>社会・知識技能 r</th>
+        <th>社会・思考判断 r</th>
+        <th>解釈</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>数学・知識技能</strong></td>
+        <td style="color:#f87171;font-family:monospace;font-weight:700">0.821 ***</td>
+        <td style="color:#fb923c;font-family:monospace;font-weight:700">0.676 ***</td>
+        <td>社会知識への影響が全観点中<strong style="color:#f87171">最大</strong></td>
+      </tr>
+      <tr>
+        <td><strong>数学・思考判断</strong></td>
+        <td style="color:#fb923c;font-family:monospace;font-weight:700">0.748 ***</td>
+        <td style="color:#fb923c;font-family:monospace;font-weight:700">0.666 ***</td>
+        <td>数学は両観点とも社会に強く連動</td>
+      </tr>
+      <tr>
+        <td><strong>理科・知識技能</strong></td>
+        <td style="color:#fb923c;font-family:monospace;font-weight:700">0.779 ***</td>
+        <td style="color:#fb923c;font-family:monospace;font-weight:700">0.731 ***</td>
+        <td>理科思考と社会思考の相関が特に高い</td>
+      </tr>
+      <tr>
+        <td><strong>理科・思考判断</strong></td>
+        <td style="color:#f59e0b;font-family:monospace;font-weight:700">0.687 ***</td>
+        <td style="color:#fb923c;font-family:monospace;font-weight:700">0.667 ***</td>
+        <td>探究サイクルの共通基盤</td>
+      </tr>
+      <tr>
+        <td><strong>国語・思考判断</strong></td>
+        <td style="color:#f59e0b;font-family:monospace;font-weight:700">0.661 ***</td>
+        <td style="color:#f59e0b;font-family:monospace;font-weight:700">0.575 ***</td>
+        <td>偏相関では消えるが単独では中程度</td>
+      </tr>
+      <tr>
+        <td>国語・知識技能</td>
+        <td style="color:#6b9eff;font-family:monospace">0.506 **</td>
+        <td style="color:#6b9eff;font-family:monospace">0.494 **</td>
+        <td>弱〜中程度。言語知識だけでは不十分</td>
+      </tr>
+      <tr>
+        <td>英語・思考判断</td>
+        <td style="color:#6b9eff;font-family:monospace">0.695 ***</td>
+        <td style="color:#a78bfa;font-family:monospace;font-weight:600">0.710 ***</td>
+        <td>英語思考は社会思考と強く連動（注目）</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="anno">
+    <strong>注目点：</strong>「数学・知識技能 × 社会・知識技能 = r=0.821」は全組み合わせで最大値。
+    これは「計算・手続きを正確に処理する力」と「地名・年号・概念を正確に覚える力」が、
+    <strong>同じ認知的基盤（精緻化記憶・系統的知識整理）を共有</strong>していることを示す。
+  </div>
+</div>
+
+<div class="callout" style="border-color:rgba(167,139,250,0.3);background:linear-gradient(135deg,rgba(167,139,250,0.06),rgba(74,158,255,0.03))">
+  <div class="callout-label" style="color:var(--accent5)">ADVANCED FINDING</div>
+  <h3>「国語思考 → 社会思考」は<em>数学知識を通じた間接効果</em>だった</h3>
+  <p>国語思考と社会思考の単純相関は r = 0.575（有意）だが、数学知識を統計的に制御すると偏相関 r = 0.217（非有意）に消失する。これは「国語の思考力が直接社会に効く」のではなく、
+  <strong>数学的な知識整理能力が国語思考力・社会思考力の両方を支えている</strong>という「共通因子モデル」が正しいことを示唆する。
+  学習指導要領が言う「知識を活用した思考力」の基盤は、教科横断的に共有される。</p>
+</div>
+
+<!-- ═══════════════ SECTION 4: 生徒プロファイル ═══════════════ -->
+<div class="sec-head">
+  <span class="sec-num">ANALYSIS 04</span>
+  <span class="sec-title">生徒プロファイル分類 ― <em>4タイプ</em>の特徴と授業戦略</span>
+</div>
+
+<p style="font-size: 16px;color:var(--text-mid);margin-bottom:18px">
+  国語スコアの中央値（58点）と社会スコアの中央値（40点）を基準に、34名を4グループに分類。
+  「高国語・低社会」群の存在が特に重要な示唆を持つ。
+</p>
+
+<div class="grid-4">
+  <div class="profile-card" style="border-top-color:#4a9eff">
+    <div class="profile-icon">📗</div>
+    <div class="profile-type" style="color:#4a9eff">高国語・高社会</div>
+    <div class="profile-count mono" style="color:#4a9eff">13名</div>
+    <p class="profile-desc">全体的学力が高い層。国語・数学・社会が均衡して高い。探究活動の恩恵を受けやすいグループ。</p>
+    <div class="profile-scores">
+      <span class="score-chip">国語 75.7</span>
+      <span class="score-chip">社会 61.8</span>
+      <span class="score-chip">数学 66.4</span>
+      <span class="score-chip">社会思考 50.8</span>
+    </div>
+  </div>
+
+  <div class="profile-card" style="border-top-color:#f87171">
+    <div class="profile-icon">⚠️</div>
+    <div class="profile-type" style="color:#f87171">高国語・低社会</div>
+    <div class="profile-count mono" style="color:#f87171">4名</div>
+    <p class="profile-desc"><strong style="color:#f87171">最重要グループ。</strong>国語は平均以上なのに社会が極端に低い（平均25点）。社会思考が壊滅的（平均12.5点）。数学も低い（平均28点）。</p>
+    <div class="profile-scores">
+      <span class="score-chip">国語 62.0</span>
+      <span class="score-chip" style="color:#f87171">社会 25.0</span>
+      <span class="score-chip" style="color:#f87171">数学 28.3</span>
+      <span class="score-chip" style="color:#f87171">社会思考 12.5</span>
+    </div>
+  </div>
+
+  <div class="profile-card" style="border-top-color:#34d399">
+    <div class="profile-icon">🔍</div>
+    <div class="profile-type" style="color:#34d399">低国語・高社会</div>
+    <div class="profile-count mono" style="color:#34d399">6名</div>
+    <p class="profile-desc">社会科の知識（平均57.5%）は維持できている。数学・理科が比較的安定している傾向。記憶型学習で社会は補える可能性。</p>
+    <div class="profile-scores">
+      <span class="score-chip">国語 46.3</span>
+      <span class="score-chip" style="color:#34d399">社会 50.7</span>
+      <span class="score-chip">数学 53.5</span>
+      <span class="score-chip">社会知識 57.5</span>
+    </div>
+  </div>
+
+  <div class="profile-card" style="border-top-color:#6b7280">
+    <div class="profile-icon">📉</div>
+    <div class="profile-type" style="color:#6b7280">低国語・低社会</div>
+    <div class="profile-count mono" style="color:#6b7280">11名</div>
+    <p class="profile-desc">全般的な学力課題を持つ層（32.4%）。全教科が低水準で推移。個別の学習支援が最優先事項。</p>
+    <div class="profile-scores">
+      <span class="score-chip">国語 29.5</span>
+      <span class="score-chip">社会 25.2</span>
+      <span class="score-chip">数学 23.3</span>
+      <span class="score-chip">社会思考 23.6</span>
+    </div>
+  </div>
+</div>
+
+<div class="finding" style="border-color:#f87171;background:rgba(248,113,113,0.04);margin-top:16px">
+  <div class="finding-label" style="color:#f87171">「高国語・低社会」群の詳細解析 ― 最重要シグナル</div>
+  <h3>国語力は社会科の「出口」にはなるが、「入口」には数学的思考が必要</h3>
+  <p>このグループの特徴は3点。①<span class="val">社会の思考観点が平均12.5%</span>と全教科中最低水準。②数学が平均28.3%と極端に低い。③小学校時代の社会が平均55%あったのに中学で25%まで急落。</p>
+  <p style="margin-top:8px">解釈：小学校では「事実の記憶・朗読力」で社会を解けていたが、中学では「データを読んで考察する・因果関係を説明する」問題が増え、数学的論理思考が要求されるようになった。国語力（言語的な読解）だけでは対応できない壁がある。</p>
+</div>
+
+<!-- ═══════════════ SECTION 5: 小→中の変化 ═══════════════ -->
+<div class="sec-head">
+  <span class="sec-num">ANALYSIS 05</span>
+  <span class="sec-title">小→中 社会スコア変化の<em>メカニズム</em></span>
+</div>
+
+<div class="grid-2">
+  <div class="chart-wrap">
+    <div class="card-title" style="border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:16px"><strong>社会スコア帯別 ― 他教科の平均スコア</strong></div>
+    <table class="band-table">
+      <thead>
+        <tr>
+          <th>社会帯</th>
+          <th>n</th>
+          <th>国語</th>
+          <th>数学</th>
+          <th>理科</th>
+          <th>英語</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:#f87171">低位 0-30%</strong></td>
+          <td class="mono">7</td>
+          <td class="mono" style="color:#f87171">28.6</td>
+          <td class="mono" style="color:#f87171">15.2</td>
+          <td class="mono" style="color:#f87171">19.9</td>
+          <td class="mono" style="color:#f87171">15.7</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#fb923c">中下 30-50%</strong></td>
+          <td class="mono">12</td>
+          <td class="mono" style="color:#fb923c">49.3</td>
+          <td class="mono" style="color:#fb923c">38.6</td>
+          <td class="mono" style="color:#fb923c">36.3</td>
+          <td class="mono" style="color:#fb923c">21.5</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#f59e0b">中上 50-70%</strong></td>
+          <td class="mono">11</td>
+          <td class="mono" style="color:#f59e0b">65.1</td>
+          <td class="mono" style="color:#f59e0b">61.8</td>
+          <td class="mono" style="color:#f59e0b">58.1</td>
+          <td class="mono" style="color:#f59e0b">48.4</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#4a9eff">高位 70%+</strong></td>
+          <td class="mono">4</td>
+          <td class="mono" style="color:#4a9eff">84.0</td>
+          <td class="mono" style="color:#4a9eff">80.8</td>
+          <td class="mono" style="color:#4a9eff">74.1</td>
+          <td class="mono" style="color:#4a9eff">75.0</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="anno">
+      社会が上がるにつれ<strong>数学・理科がほぼ比例して上昇</strong>している。社会だけが突出して低い（あるいは高い）生徒は少なく、社会スコアは全体学力の鏡になっている。
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="card-title" style="border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:16px"><strong>小→中 社会変化幅別 ― 特徴分析</strong></div>
+    <table class="band-table">
+      <thead>
+        <tr>
+          <th>変化幅</th>
+          <th>n</th>
+          <th>中国語均</th>
+          <th>小社会均</th>
+          <th>示唆</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:#f87171">大幅低下<br>(-30pt超)</strong></td>
+          <td class="mono">10</td>
+          <td class="mono">53.2</td>
+          <td class="mono" style="color:#f59e0b;font-weight:700">77.2</td>
+          <td style="font-size: 16px">小学校時代の<br>社会が高かった</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#fb923c">中程度低下<br>(-15〜-30)</strong></td>
+          <td class="mono">11</td>
+          <td class="mono">53.8</td>
+          <td class="mono" style="color:#f59e0b">65.7</td>
+          <td style="font-size: 16px">中程度の出発点</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#34d399">小幅変化<br>(-15〜+5)</strong></td>
+          <td class="mono">8</td>
+          <td class="mono">57.0</td>
+          <td class="mono">58.8</td>
+          <td style="font-size: 16px">安定的に移行</td>
+        </tr>
+        <tr>
+          <td><strong style="color:#4a9eff">上昇<br>(+5pt超)</strong></td>
+          <td class="mono">4</td>
+          <td class="mono">51.0</td>
+          <td class="mono" style="color:#34d399">46.0</td>
+          <td style="font-size: 16px"><strong>元が低かった層<br>が伸びている</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="anno">
+      <strong>逆説的発見：</strong>社会で「上昇した4名」は小学校時代の社会が平均46点と低かった生徒たち。
+      <strong>元が低かった生徒ほど中学で伸びている。</strong>一方、大幅低下した10名は小学校社会が平均77.2点と高かった。
+      これは「小学校の暗記中心の社会で高得点だった生徒が、中学の思考型テストに対応できていない」ことを示す。
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SECTION 6: 授業改善提言 ═══════════════ -->
+<div class="sec-head">
+  <span class="sec-num">ANALYSIS 06</span>
+  <span class="sec-title">データが示す<em>授業改善の方向性</em></span>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">
+
+  <div class="rec-card r1">
+    <div class="rec-priority" style="color:#f87171">最重要 — データの最強シグナル</div>
+    <h4>数学×社会の「横断的思考」を授業設計に組み込む</h4>
+    <ul>
+      <li>社会科で<strong>データ・グラフを読む活動</strong>を増やす（統計グラフ・人口ピラミッドなど）</li>
+      <li>数学の授業で使う「表を整理して考える」思考回路を、地理・歴史の授業で意識的に再活用する</li>
+      <li>IB探究での「証拠を基に判断する」学習方略を社会科の資料問題に転用する指示を出す</li>
+      <li>対象：特に「高国語・低社会」の4名には数学的思考アプローチが必要</li>
+    </ul>
+  </div>
+
+  <div class="rec-card r1">
+    <div class="rec-priority" style="color:#f87171">最重要 — 観点別データより</div>
+    <h4>社会の「思考力」を鍛える問題を増やす<br>（知識:思考のバランス改善）</h4>
+    <ul>
+      <li>現状：社会の知識49.4% ＞ 思考37.2%（差 -12pt）</li>
+      <li>「なぜそうなったか」「どうなると予測できるか」を書かせる論述問題を定期的に設定</li>
+      <li>理科の探究サイクル（問い→仮説→検証→考察）を社会科歴史探究に移植する授業を設計</li>
+      <li>IBのAtLとしての「考察」を社会のワークシートに明示的に組み込む</li>
+    </ul>
+  </div>
+
+  <div class="rec-card r2">
+    <div class="rec-priority" style="color:#f59e0b">重要 — 変化分析より</div>
+    <h4>小学校で「暗記型」だった生徒への移行支援</h4>
+    <ul>
+      <li>大幅低下した10名（元の小社会平均77.2%）は「覚える社会」から「考える社会」への転換が最大の課題</li>
+      <li>中学入学時に「中学の社会科の問われ方の違い」を明示的に説明する導入授業を設ける</li>
+      <li>テスト分析を本人と共有し、「知識は取れているのに思考で失点している」ことに気づかせる</li>
+    </ul>
+  </div>
+
+  <div class="rec-card r3">
+    <div class="rec-priority" style="color:#34d399">継続的取組 — 上昇事例の横展開</div>
+    <h4>小学校で低かった生徒が伸びたメカニズムの解明</h4>
+    <ul>
+      <li>上昇4名は元が低かった（小社会平均46点）→ IB探究の何かが効いた可能性</li>
+      <li>この4名のIBポートフォリオや授業態度を教員間で共有・分析する</li>
+      <li>「探究によって社会への興味が高まった」仮説を検証できるか、生徒への聞き取りも有効</li>
+    </ul>
+  </div>
+
+  <div class="rec-card r4">
+    <div class="rec-priority" style="color:#a78bfa">注目 — 英語思考の意外な発見</div>
+    <h4>英語の思考力と社会思考力の連携を意識する</h4>
+    <ul>
+      <li>英語思考 × 社会思考 = r=0.710（全観点中最高水準の一つ）</li>
+      <li>IBのMYP英語で行う「テキスト分析・立場の説明・論述」は、社会科の思考問題と同型</li>
+      <li>英語の論述問題と社会科の論述問題を意図的にリンクさせる教科横断単元を設計する</li>
+    </ul>
+  </div>
+
+</div>
+
+<hr class="divider">
+
+<!-- ── SUMMARY ── -->
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-top:4px">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size: 16px;letter-spacing:3px;color:var(--accent);margin-bottom:14px">CONCLUSION — まとめ</div>
+  <h2 style="font-size:clamp(17px,2.5vw,22px);font-weight:700;margin-bottom:16px;line-height:1.5">
+    社会科の低さは<span style="color:#f59e0b">「社会固有の問題」ではなく</span>、<br>
+    <span style="color:#4a9eff">「数学・理科との横断的な論理思考力の弱さ」</span>が<br>最も有力な説明変数だった
+  </h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:8px">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size: 16px;color:#f87171;letter-spacing:1px;margin-bottom:6px">FINDING 1</div>
+      <p style="font-size: 16px;color:var(--text-mid);line-height:1.6">国語との相関は<strong style="color:var(--text)">擬似相関</strong>。偏相関で消える。社会を独立に予測するのは<strong style="color:#f59e0b">数学（r=0.369*）と理科（r=0.363*）</strong>のみ。</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size: 16px;color:#34d399;letter-spacing:1px;margin-bottom:6px">FINDING 2</div>
+      <p style="font-size: 16px;color:var(--text-mid);line-height:1.6">「数学知識 × 社会知識」<strong style="color:var(--text)">r=0.821</strong>が全組み合わせで最大。<strong style="color:#34d399">精緻な知識整理能力</strong>が教科横断的な共通基盤。</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size: 16px;color:#a78bfa;letter-spacing:1px;margin-bottom:6px">FINDING 3</div>
+      <p style="font-size: 16px;color:var(--text-mid);line-height:1.6"><strong style="color:var(--text)">小学校で社会が高かった生徒ほど大幅低下</strong>している。「暗記型→思考型」への移行支援が最重要の授業課題。</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size: 16px;color:#fb923c;letter-spacing:1px;margin-bottom:6px">FINDING 4</div>
+      <p style="font-size: 16px;color:var(--text-mid);line-height:1.6">小学校時代の社会が<strong style="color:var(--text)">低かった生徒4名が中学で上昇</strong>。IBの探究的アプローチが「思考型社会科」に適合した可能性。</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer class="layer">
+  <p>分析手法：Pearson相関係数 / 偏相関分析（他3変数制御）/ 中央値分割クラスタリング</p>
+  <p style="margin-top:4px">対象：小中共通34名 ｜ 小学校2024年度・中学校2025年度 学力調査</p>
+  <p style="margin-top:4px"><strong>統計的有意水準：*** p&lt;0.001 / ** p&lt;0.01 / * p&lt;0.05 / n.s. 有意差なし</strong></p>
+</footer>
+
+</div><!-- /layer -->
+</body>
+</html>
