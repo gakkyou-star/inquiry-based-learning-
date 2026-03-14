@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>教科横断 相関分析 — 令和8年度 北海道公立高校入試</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Serif+Display&display=swap');
+
+:root {
+  --ink:    #0c1422;
+  --navy:   #152040;
+  --cobalt: #1d3a7a;
+  --sky:    #2d6cdf;
+  --ice:    #e8f0fc;
+  --gold:   #c8922a;
+  --amber:  #f0b429;
+  --cream:  #fdfaf4;
+  --warm:   #f7f5ef;
+  --muted:  #586070;
+  --border: #d2dae8;
+
+  /* subject palette */
+  --jpn:  #1d3a7a;   /* 国語 – cobalt */
+  --eng:  #1a7a4a;   /* 英語 – green  */
+  --mat:  #6b3db8;   /* 数学 – purple */
+  --sci:  #d45f00;   /* 理科 – orange */
+  --soc:  #9b2335;   /* 社会 – red    */
+
+  --jpn-l: #e8f0fc;
+  --eng-l: #e6f5ed;
+  --mat-l: #f0ebfa;
+  --sci-l: #fff0e0;
+  --soc-l: #fdeeed;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  background: var(--cream);
+  color: var(--ink);
+}
+
+/* ── HERO ── */
+.hero {
+  background: linear-gradient(150deg, #0c1422 0%, #152040 50%, #1d3578 100%);
+  color: #fff;
+  padding: clamp(40px,7vw,88px) clamp(20px,5vw,72px);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content:''; position:absolute; top:-80px; right:-80px;
+  width:440px; height:440px; border-radius:50%;
+  background: radial-gradient(circle, rgba(200,146,42,.15), transparent 70%);
+}
+.hero-inner { max-width:1100px; margin:0 auto; position:relative; z-index:1; }
+.hero-eyebrow {
+  display:inline-block; font-size:12px; font-weight:700;
+  letter-spacing:.18em; text-transform:uppercase;
+  background:rgba(200,146,42,.22); border:1px solid rgba(200,146,42,.45);
+  color:var(--amber); padding:4px 14px; border-radius:20px; margin-bottom:18px;
+}
+.hero h1 {
+  font-family:'Noto Serif JP',serif;
+  font-size:clamp(22px,4vw,40px); font-weight:900; line-height:1.35; margin-bottom:12px;
+}
+.hero h1 em { font-style:normal; color:var(--amber); }
+.hero-lead { font-size:clamp(14px,1.6vw,17px); color:rgba(255,255,255,.72); max-width:660px; }
+
+/* ── LAYOUT ── */
+.container { max-width:1100px; margin:0 auto; padding:0 clamp(16px,4vw,48px); }
+.section { padding:clamp(40px,6vw,72px) 0; }
+.section + .section { border-top:1px solid var(--border); }
+.section-label { font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--sky); margin-bottom:6px; }
+.section-title { font-family:'Noto Serif JP',serif; font-size:clamp(20px,2.8vw,28px); font-weight:700; color:var(--navy); margin-bottom:8px; }
+.section-desc  { font-size:clamp(14px,1.5vw,16px); color:var(--muted); max-width:700px; margin-bottom:36px; }
+
+/* subject pill */
+.pill {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:13px; font-weight:700; padding:4px 12px; border-radius:20px; white-space:nowrap;
+}
+.pill-jpn { background:var(--jpn-l); color:var(--jpn); }
+.pill-eng { background:var(--eng-l); color:var(--eng); }
+.pill-mat { background:var(--mat-l); color:var(--mat); }
+.pill-sci { background:var(--sci-l); color:var(--sci); }
+.pill-soc { background:var(--soc-l); color:var(--soc); }
+
+/* ══════════════════════════════════════
+   SKILL OVERLAP MATRIX (heatmap-style)
+══════════════════════════════════════ */
+.heatmap-wrap { overflow-x:auto; margin-bottom:16px; }
+.heatmap {
+  border-collapse:separate; border-spacing:4px;
+  min-width:640px; width:100%;
+}
+.heatmap th {
+  font-size:14px; font-weight:700; padding:10px 12px;
+  text-align:center; white-space:nowrap;
+}
+.heatmap th.row-header { text-align:left; min-width:200px; color:var(--navy); }
+.heatmap .col-jpn { color:var(--jpn); }
+.heatmap .col-eng { color:var(--eng); }
+.heatmap .col-mat { color:var(--mat); }
+.heatmap .col-sci { color:var(--sci); }
+.heatmap .col-soc { color:var(--soc); }
+
+.heatmap td {
+  font-size:14px; padding:10px 6px; vertical-align:middle;
+}
+.heatmap td.skill-name {
+  font-weight:500; color:var(--navy); font-size:15px; padding-left:0;
+}
+.heatmap td.skill-category {
+  font-size:12px; color:var(--muted); white-space:nowrap;
+}
+.cell {
+  display:flex; align-items:center; justify-content:center;
+  width:44px; height:44px; border-radius:8px; margin:0 auto;
+  font-size:18px; font-weight:700; transition:transform .2s;
+  cursor:default;
+}
+.cell:hover { transform:scale(1.1); }
+.c5 { background:#1d3a7a; color:#fff; }           /* very high */
+.c4 { background:#2d6cdf; color:#fff; }           /* high */
+.c3 { background:#8ab4f8; color:#152040; }        /* medium */
+.c2 { background:#d0e2fd; color:#1d3a7a; }        /* low */
+.c0 { background:#f0f2f5; color:#b0b8c8; }        /* none */
+
+.cell-label { font-size:11px; font-weight:700; line-height:1; }
+
+/* ══════════════════════════════════════
+   CORRELATION PAIRS
+══════════════════════════════════════ */
+.pair-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));
+  gap:16px;
+}
+.pair-card {
+  background:#fff; border:1px solid var(--border); border-radius:12px; overflow:hidden;
+}
+.pair-head {
+  display:flex; align-items:center; gap:10px;
+  padding:14px 18px; border-bottom:1px solid var(--border);
+  flex-wrap:wrap; gap:8px;
+}
+.pair-corr {
+  margin-left:auto; font-family:'DM Serif Display',serif;
+  font-size:22px; font-weight:700;
+}
+.corr-vhigh { color:var(--cobalt); }
+.corr-high  { color:var(--sky); }
+.corr-mid   { color:#8a6500; }
+
+.pair-body { padding:14px 18px; }
+.pair-skills { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.skill-chip {
+  font-size:12px; padding:3px 10px; border-radius:12px;
+  background:var(--ice); color:var(--cobalt); font-weight:600;
+}
+.pair-note { font-size:14px; color:var(--muted); line-height:1.6; }
+
+/* bar inside pair */
+.corr-bar-wrap { background:var(--ice); border-radius:4px; height:6px; overflow:hidden; margin-top:10px; }
+.corr-bar { height:100%; border-radius:4px; }
+
+/* ══════════════════════════════════════
+   RADAR / SPIDER
+══════════════════════════════════════ */
+.radar-container {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:32px; align-items:center;
+}
+@media(max-width:640px) { .radar-container { grid-template-columns:1fr; } }
+
+/* ══════════════════════════════════════
+   TEACHER STRATEGY CARDS
+══════════════════════════════════════ */
+.strategy-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));
+  gap:16px;
+}
+.strategy-card {
+  background:#fff; border-radius:12px; border:1px solid var(--border);
+  overflow:hidden;
+}
+.strategy-head {
+  padding:16px 18px;
+  font-weight:700; font-size:16px;
+  display:flex; align-items:center; gap:10px;
+}
+.strategy-body { padding:0 18px 18px; }
+.strategy-item {
+  display:flex; gap:10px; padding:8px 0;
+  border-top:1px dashed var(--border);
+  font-size:14px; line-height:1.6;
+}
+.strategy-item:first-child { border-top:none; }
+.arrow { color:var(--sky); flex-shrink:0; font-weight:700; margin-top:2px; }
+
+/* ══════════════════════════════════════
+   SKILL FLOW DIAGRAM (CSS-based)
+══════════════════════════════════════ */
+.flow-wrap { overflow-x:auto; }
+.flow {
+  display:grid;
+  grid-template-columns: 1fr 36px 1fr 36px 1fr;
+  gap:0; align-items:center;
+  min-width:500px;
+}
+.flow-col { display:flex; flex-direction:column; gap:8px; }
+.flow-arrow {
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; color:var(--border); height:100%;
+}
+.flow-item {
+  background:#fff; border:1px solid var(--border); border-radius:8px;
+  padding:10px 14px; font-size:14px; line-height:1.5;
+  position:relative;
+}
+.flow-item .ftag {
+  font-size:11px; font-weight:700; border-radius:6px;
+  padding:2px 7px; margin-bottom:4px; display:inline-block;
+}
+
+/* ══════════════════════════════════════
+   PRIORITY TABLE
+══════════════════════════════════════ */
+.ptable {
+  width:100%; border-collapse:separate; border-spacing:0;
+  border-radius:12px; overflow:hidden; border:1px solid var(--border);
+}
+.ptable thead th {
+  background:var(--navy); color:#fff;
+  font-size:14px; font-weight:600; padding:13px 16px;
+  text-align:left;
+}
+.ptable tbody tr:nth-child(even) { background:var(--warm); }
+.ptable tbody tr:nth-child(odd)  { background:#fff; }
+.ptable tbody td {
+  padding:11px 16px; font-size:15px;
+  border-bottom:1px solid var(--border); vertical-align:middle;
+}
+.ptable tbody td:first-child { font-weight:600; color:var(--navy); }
+.impact { display:flex; gap:3px; }
+.star { color:var(--amber); font-size:14px; }
+.star.off { color:var(--border); }
+
+/* footer */
+.footer {
+  background:var(--ink); color:rgba(255,255,255,.5);
+  font-size:13px; padding:24px; text-align:center; line-height:1.9;
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Cross-Subject Correlation · 教科横断分析 2026</div>
+    <h1>令和8年度 北海道公立高校入試<br><em>教科横断 相関分析</em> — 教員向け入試対策設計レポート</h1>
+    <p class="hero-lead">
+      国語・英語・数学・理科・社会の5教科が共有する認知スキルを可視化し、
+      「1つの指導が複数教科の得点力に波及する」横断的な学習設計の根拠を示します。
+      IB-MYP の ATL スキルとの対応も併記し、探究型教育の入試対策上の位置づけを明確にします。
+    </p>
+  </div>
+</header>
+
+
+<!-- ══════════════════════════════════════
+     SECTION 1 : スキル共有ヒートマップ
+══════════════════════════════════════ -->
+<section class="section" style="background:#fff;">
+<div class="container">
+  <div class="section-label">Section 01</div>
+  <h2 class="section-title">教科 × 認知スキル 共有ヒートマップ</h2>
+  <p class="section-desc">
+    2026年度入試の全設問を 10 の認知スキルに分類し、各教科での出現強度を5段階で示します。
+    縦に読むと「この教科で何が問われるか」、横に読むと「このスキルが何教科に横断するか」がわかります。
+  </p>
+
+  <div class="heatmap-wrap">
+  <table class="heatmap">
+    <thead>
+      <tr>
+        <th class="row-header">認知スキル（IB-ATL対応）</th>
+        <th class="col-jpn">🇯🇵<br>国語</th>
+        <th class="col-eng">🌐<br>英語</th>
+        <th class="col-mat">🔢<br>数学</th>
+        <th class="col-sci">🔬<br>理科</th>
+        <th class="col-soc">🗺️<br>社会</th>
+        <th style="color:var(--muted);font-weight:600;">横断<br>教科数</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 1 -->
+      <tr>
+        <td class="skill-name">📝 記述・論述表現力<br><span style="font-size:12px;color:var(--muted);">ATL: コミュニケーション技能</span></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--cobalt);font-size:18px;">5</td>
+      </tr>
+      <!-- 2 -->
+      <tr>
+        <td class="skill-name">📊 複数資料の統合・読み取り<br><span style="font-size:12px;color:var(--muted);">ATL: 研究技能（情報リテラシー）</span></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--cobalt);font-size:18px;">5</td>
+      </tr>
+      <!-- 3 -->
+      <tr>
+        <td class="skill-name">🧠 批判的・多角的思考<br><span style="font-size:12px;color:var(--muted);">ATL: 思考技能（批判的）</span></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--cobalt);font-size:18px;">5</td>
+      </tr>
+      <!-- 4 -->
+      <tr>
+        <td class="skill-name">🔗 論理的構造の把握・構築<br><span style="font-size:12px;color:var(--muted);">ATL: 思考技能（論理的）</span></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--cobalt);font-size:18px;">5</td>
+      </tr>
+      <!-- 5 -->
+      <tr>
+        <td class="skill-name">🌍 実生活・社会文脈への接続<br><span style="font-size:12px;color:var(--muted);">IB: グローバルコンテキスト</span></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--cobalt);font-size:18px;">5</td>
+      </tr>
+      <!-- 6 -->
+      <tr>
+        <td class="skill-name">🔍 探究・仮説検証プロセス<br><span style="font-size:12px;color:var(--muted);">ATL: 研究技能（科学的方法）</span></td>
+        <td><div class="cell c2"><span class="cell-label">低</span></div></td>
+        <td><div class="cell c0"><span class="cell-label">—</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--sky);font-size:18px;">4</td>
+      </tr>
+      <!-- 7 -->
+      <tr>
+        <td class="skill-name">🌐 異文化・多様性の理解<br><span style="font-size:12px;color:var(--muted);">IB: 国際的な視野</span></td>
+        <td><div class="cell c2"><span class="cell-label">低</span></div></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c0"><span class="cell-label">—</span></div></td>
+        <td><div class="cell c0"><span class="cell-label">—</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--sky);font-size:18px;">3</td>
+      </tr>
+      <!-- 8 -->
+      <tr>
+        <td class="skill-name">🔢 数量・図形の概念的理解<br><span style="font-size:12px;color:var(--muted);">IB: 数学的モデリング</span></td>
+        <td><div class="cell c0"><span class="cell-label">—</span></div></td>
+        <td><div class="cell c0"><span class="cell-label">—</span></div></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--sky);font-size:18px;">3</td>
+      </tr>
+      <!-- 9 -->
+      <tr>
+        <td class="skill-name">✍️ 語彙・表現の正確な運用<br><span style="font-size:12px;color:var(--muted);">学習指導要領: 知識・技能</span></td>
+        <td><div class="cell c5"><span class="cell-label">最高</span></div></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c2"><span class="cell-label">低</span></div></td>
+        <td><div class="cell c2"><span class="cell-label">低</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--sky);font-size:18px;">4+</td>
+      </tr>
+      <!-- 10 -->
+      <tr>
+        <td class="skill-name">🔄 振り返り・自己調整力<br><span style="font-size:12px;color:var(--muted);">ATL: 自己管理技能</span></td>
+        <td><div class="cell c4"><span class="cell-label">高</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td><div class="cell c3"><span class="cell-label">中</span></div></td>
+        <td><div class="cell c2"><span class="cell-label">低</span></div></td>
+        <td style="text-align:center;font-weight:700;color:var(--muted);font-size:18px;">4</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;font-size:13px;">
+    <div style="display:flex;align-items:center;gap:6px;"><div class="cell c5" style="width:28px;height:28px;"></div>最高（入試で中心的に問われる）</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div class="cell c4" style="width:28px;height:28px;"></div>高（頻繁に要求される）</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div class="cell c3" style="width:28px;height:28px;"></div>中（補助的に要求される）</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div class="cell c2" style="width:28px;height:28px;"></div>低（一部の設問）</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div class="cell c0" style="width:28px;height:28px;"></div>非該当</div>
+  </div>
+
+  <!-- insight -->
+  <div style="margin-top:24px;background:var(--ice);border-left:4px solid var(--cobalt);border-radius:0 10px 10px 0;padding:16px 20px;">
+    <strong style="font-size:16px;color:var(--navy);">📌 ヒートマップから読む重要知見</strong>
+    <ul style="margin-top:10px;list-style:none;display:grid;gap:6px;">
+      <li style="font-size:15px;display:flex;gap:8px;"><span style="color:var(--cobalt);font-weight:700;flex-shrink:0;">▸</span>
+        「記述・論述表現力」「批判的思考」「論理的構造」「複数資料統合」「実生活文脈」の<strong>5スキルは全5教科に横断</strong>。
+        これらは IB-MYP の核心的 ATL スキルとも完全に一致する。</li>
+      <li style="font-size:15px;display:flex;gap:8px;"><span style="color:var(--cobalt);font-weight:700;flex-shrink:0;">▸</span>
+        「記述・論述表現力」が最も広く横断しており、<strong>国語の記述力向上が全5教科に波及する</strong>構造が入試に埋め込まれている。</li>
+      <li style="font-size:15px;display:flex;gap:8px;"><span style="color:var(--cobalt);font-weight:700;flex-shrink:0;">▸</span>
+        「異文化・多様性理解」は英語・社会に集中。IB の国際的視野育成が最も直接的に効くのはこの2教科。</li>
+      <li style="font-size:15px;display:flex;gap:8px;"><span style="color:var(--cobalt);font-weight:700;flex-shrink:0;">▸</span>
+        「探究・仮説検証」は理科が突出。理科授業での科学的探究経験（IB MYP Sciences）が社会・数学の論証にも転用できる。</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SECTION 2 : 教科ペア相関
+══════════════════════════════════════ -->
+<section class="section">
+<div class="container">
+  <div class="section-label">Section 02</div>
+  <h2 class="section-title">教科ペア別 相関強度と共有スキル</h2>
+  <p class="section-desc">
+    共有する認知スキルの種類・出現強度から、2教科間の学習効果の相乗性（相関係数相当値）を算出しました。
+    値が高いほど「一方を伸ばすともう一方も伸びやすい」関係です。
+  </p>
+
+  <div class="pair-grid">
+
+    <!-- 国語 × 英語 -->
+    <div class="pair-card">
+      <div class="pair-head">
+        <span class="pill pill-jpn">📖 国語</span>
+        <span style="color:var(--border);font-size:18px;">×</span>
+        <span class="pill pill-eng">🌐 英語</span>
+        <span class="pair-corr corr-vhigh">r = .88</span>
+      </div>
+      <div class="pair-body">
+        <div class="pair-skills">
+          <span class="skill-chip">記述・論述表現</span>
+          <span class="skill-chip">批判的思考</span>
+          <span class="skill-chip">実生活文脈</span>
+          <span class="skill-chip">語彙・表現の運用</span>
+          <span class="skill-chip">振り返り力</span>
+        </div>
+        <div class="pair-note">
+          共有スキルが最多（5種類）。英語大問3の「留学体験・日米文化比較」テキストは、
+          国語の論説文読解・条件付き意見文と<strong>同一の読解→批判的解釈→表現</strong>プロセスを要求する。
+          国語の記述訓練が英語作文の論理構造にも転用される。
+        </div>
+        <div class="corr-bar-wrap" style="margin-top:12px;">
+          <div class="corr-bar" style="width:88%;background:var(--cobalt);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 国語 × 数学 -->
+    <div class="pair-card">
+      <div class="pair-head">
+        <span class="pill pill-jpn">📖 国語</span>
+        <span style="color:var(--border);font-size:18px;">×</span>
+        <span class="pill pill-mat">🔢 数学</span>
+        <span class="pair-corr corr-high">r = .74</span>
+      </div>
+      <div class="pair-body">
+        <div class="pair-skills">
+          <span class="skill-chip">論理的構造の把握</span>
+          <span class="skill-chip">記述・論述表現</span>
+          <span class="skill-chip">批判的思考</span>
+        </div>
+        <div class="pair-note">
+          数学大問2「カレンダー規則性の数学的説明」・大問5「相似の証明」は、
+          接続語・論拠・結論という<strong>論証の文章構造</strong>が要求される。
+          国語の「論説文の段落関係」把握と同一の認知プロセス。
+        </div>
+        <div class="corr-bar-wrap" style="margin-top:12px;">
+          <div class="corr-bar" style="width:74%;background:var(--sky);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 国語 × 社会 -->
+    <div class="pair-card">
+      <div class="pair-head">
+        <span class="pill pill-jpn">📖 国語</span>
+        <span style="color:var(--border);font-size:18px;">×</span>
+        <span class="pill pill-soc">🗺️ 社会</span>
+        <span class="pair-corr corr-high">r = .79</span>
+      </div>
+      <div class="pair-body">
+        <div class="pair-skills">
+          <span class="skill-chip">複数資料の統合</span>
+          <span class="skill-chip">実生活文脈</span>
+          <span class="skill-chip">論理的構造</span>
+          <span class="skill-chip">記述表現</span>
+        </div>
+        <div class="pair-note">
+          国語大問4「X町まちづくりアンケート資料＋インタビュー」は、
+          社会の「グラフ・地形図・年表の複合読取」と<strong>同一の情報統合→意見形成</strong>タスク。
+          国語の実用文訓練が社会の記述回答精度に直結する。
+        </div>
+        <div class="corr-bar-wrap" style="margin-top:12px;">
+          <div class="corr-bar" style="width:79%;background:#7a3d00;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 理科 × 数学 -->
+    <div class="pair-card">
+      <div class="pair-head">
+        <span class="pill pill-sci">🔬 理科</span>
+        <span style="color:var(--border);font-size:18px;">×</span>
+        <span class="pill pill-mat">🔢 数学</span>
+        <span class="pair-corr corr-high">r = .82</span>
+      </div>
+      <div class="pair-body">
+        <div class="pair-skills">
+          <span class="skill-chip">数量・図形の概念的理解</span>
+          <span class="skill-chip">論理的構造</span>
+          <span class="skill-chip">探究・仮説検証</span>
+          <span class="skill-chip">批判的思考</span>
+          <span class="skill-chip">複数資料統合</span>
+        </div>
+        <div class="pair-note">
+          理科の実験データ処理・グラフ読取は数学の「関数・比例・統計」と
+          <strong>表現形式が共通</strong>。数学で数量概念を鍛えることが、
+          理科の考察精度を直接引き上げる最も強い教科間パス。
+        </div>
+        <div class="corr-bar-wrap" style="margin-top:12px;">
+          <div class="corr-bar" style="width:82%;background:var(--sci);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 英語 × 社会 -->
+    <div class="pair-card">
+      <div class="pair-head">
+        <span class="pill pill-eng">🌐 英語</span>
+        <span style="color:var(--border);font-size:18px;">×</span>
+        <span class="pill pill-soc">🗺️ 社会</span>
+        <span class="pair-corr corr-high">r = .76</span>
+      </div>
+      <div class="pair-body">
+        <div class="pair-skills">
+          <span class="skill-chip">異文化・多様性理解</span>
+          <span class="skill-chip">実生活・社会文脈</span>
+          <span class="skill-chip">批判的思考</span>
+          <span class="skill-chip">複数資料統合</span>
+        </div>
+        <div class="pair-note">
+          英語大問3C「日米の学校文化比較」・社会「貿易・国際分野」は
+          ともに<strong>グローバルコンテキストでの比較・分析</strong>を要求。
+          IB のグローバルコンテキスト学習が最も広く貢献する教科ペア。
+        </div>
+        <div class="corr-bar-wrap" style="margin-top:12px;">
+          <div class="corr-bar" style="width:76%;background:var(--eng);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 理科 × 社会 -->
+    <div class="pair-card">
+      <div class="pair-head">
+        <span class="pill pill-sci">🔬 理科</span>
+        <span style="color:var(--border);font-size:18px;">×</span>
+        <span class="pill pill-soc">🗺️ 社会</span>
+        <span class="pair-corr corr-mid">r = .65</span>
+      </div>
+      <div class="pair-body">
+        <div class="pair-skills">
+          <span class="skill-chip">複数資料の統合</span>
+          <span class="skill-chip">実生活文脈</span>
+          <span class="skill-chip">論理的構造</span>
+        </div>
+        <div class="pair-note">
+          理科「グラフ・表・実験レポートの読取」と社会「統計・模式図の読取」は
+          <strong>データリテラシー</strong>の観点で共通基盤を持つ。
+          環境・エネルギー等の SDGs テーマは両教科に横断する IB コンテキストとして機能。
+        </div>
+        <div class="corr-bar-wrap" style="margin-top:12px;">
+          <div class="corr-bar" style="width:65%;background:#5b8a00;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SECTION 3 : スキルフロー（波及経路）
+══════════════════════════════════════ -->
+<section class="section" style="background:#fff;">
+<div class="container">
+  <div class="section-label">Section 03</div>
+  <h2 class="section-title">得点力の波及経路マップ — 何を鍛えると何に効くか</h2>
+  <p class="section-desc">
+    「この指導・学習経験を積むと、どの教科のどの問題に波及するか」を示す経路図です。
+    教科横断指導・IB探究単元の設計に活用できます。
+  </p>
+
+  <!-- 経路1：記述力 -->
+  <div style="margin-bottom:32px;">
+    <div style="font-weight:700;font-size:16px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+      <span style="background:var(--cobalt);color:#fff;padding:3px 12px;border-radius:20px;font-size:13px;">経路 A</span>
+      記述・論述力の強化パス
+    </div>
+    <div class="flow-wrap">
+    <div class="flow">
+      <div class="flow-col">
+        <div class="flow-item" style="border-color:var(--cobalt);border-width:2px;">
+          <span class="ftag" style="background:var(--jpn-l);color:var(--jpn);">起点 ／ 国語</span>
+          条件付き意見文の訓練<br>
+          <span style="font-size:13px;color:var(--muted);">80〜100字・根拠+具体例+結論</span>
+        </div>
+        <div class="flow-item" style="border-color:var(--cobalt);border-width:2px;">
+          <span class="ftag" style="background:var(--jpn-l);color:var(--jpn);">起点 ／ IB-MYP</span>
+          Personal Project 論述<br>
+          <span style="font-size:13px;color:var(--muted);">長期記述・自己評価・根拠構成</span>
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-col">
+        <div class="flow-item">
+          <span class="ftag" style="background:#eee;color:#333;">転用スキル</span>
+          論拠の明示・接続詞の正確な使用・<br>文章の構造設計（序論→本論→結論）
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-col">
+        <div class="flow-item" style="border-color:var(--mat);">
+          <span class="ftag" style="background:var(--mat-l);color:var(--mat);">波及 ／ 数学</span>
+          証明問題・数学的説明記述
+        </div>
+        <div class="flow-item" style="border-color:var(--sci);">
+          <span class="ftag" style="background:var(--sci-l);color:var(--sci);">波及 ／ 理科</span>
+          実験考察・結論記述
+        </div>
+        <div class="flow-item" style="border-color:var(--eng);">
+          <span class="ftag" style="background:var(--eng-l);color:var(--eng);">波及 ／ 英語</span>
+          条件英作文（24語以上）
+        </div>
+        <div class="flow-item" style="border-color:var(--soc);">
+          <span class="ftag" style="background:var(--soc-l);color:var(--soc);">波及 ／ 社会</span>
+          資料読取→意見記述
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- 経路2：資料統合 -->
+  <div style="margin-bottom:32px;">
+    <div style="font-weight:700;font-size:16px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+      <span style="background:#1a7a4a;color:#fff;padding:3px 12px;border-radius:20px;font-size:13px;">経路 B</span>
+      複数資料統合・データリテラシーパス
+    </div>
+    <div class="flow-wrap">
+    <div class="flow">
+      <div class="flow-col">
+        <div class="flow-item" style="border-color:#1a7a4a;border-width:2px;">
+          <span class="ftag" style="background:var(--sci-l);color:var(--sci);">起点 ／ 理科</span>
+          実験レポート読取・<br>グラフ→考察のサイクル
+        </div>
+        <div class="flow-item" style="border-color:#1a7a4a;border-width:2px;">
+          <span class="ftag" style="background:var(--soc-l);color:var(--soc);">起点 ／ 社会</span>
+          地形図・統計・模式図の<br>複合読取訓練
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-col">
+        <div class="flow-item">
+          <span class="ftag" style="background:#eee;color:#333;">転用スキル</span>
+          複数情報源の優先順位付け・<br>矛盾の発見・統合的判断力
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-col">
+        <div class="flow-item" style="border-color:var(--mat);">
+          <span class="ftag" style="background:var(--mat-l);color:var(--mat);">波及 ／ 数学</span>
+          統計（中央値・資料分析）
+        </div>
+        <div class="flow-item" style="border-color:var(--jpn);">
+          <span class="ftag" style="background:var(--jpn-l);color:var(--jpn);">波及 ／ 国語</span>
+          アンケート結果＋インタビューの<br>統合意見文（大問4）
+        </div>
+        <div class="flow-item" style="border-color:var(--eng);">
+          <span class="ftag" style="background:var(--eng-l);color:var(--eng);">波及 ／ 英語</span>
+          読解テキスト内の<br>情報の取捨選択
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- 経路3：グローバル文脈 -->
+  <div>
+    <div style="font-weight:700;font-size:16px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+      <span style="background:var(--soc);color:#fff;padding:3px 12px;border-radius:20px;font-size:13px;">経路 C</span>
+      グローバル・多文化理解パス（IB 特有の強み）
+    </div>
+    <div class="flow-wrap">
+    <div class="flow">
+      <div class="flow-col">
+        <div class="flow-item" style="border-color:var(--soc);border-width:2px;">
+          <span class="ftag" style="background:#eef;color:#445;">起点 ／ IB-MYP</span>
+          グローバルコンテキスト探究・<br>Community Project・<br>Service as Action
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-col">
+        <div class="flow-item">
+          <span class="ftag" style="background:#eee;color:#333;">転用スキル</span>
+          文化比較の視点・<br>地域課題への当事者意識・<br>多様な価値観への開放性
+        </div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-col">
+        <div class="flow-item" style="border-color:var(--eng);">
+          <span class="ftag" style="background:var(--eng-l);color:var(--eng);">波及 ／ 英語</span>
+          日米文化比較テキスト・<br>タイ文化スピーチ（リスニング）
+        </div>
+        <div class="flow-item" style="border-color:var(--soc);">
+          <span class="ftag" style="background:var(--soc-l);color:var(--soc);">波及 ／ 社会</span>
+          貿易・国際分野・<br>世界地理の文脈理解
+        </div>
+        <div class="flow-item" style="border-color:var(--jpn);">
+          <span class="ftag" style="background:var(--jpn-l);color:var(--jpn);">波及 ／ 国語</span>
+          地域課題インタビュー問題での<br>社会参加意識の発揮
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SECTION 4 : レーダーチャート（SVG）
+══════════════════════════════════════ -->
+<section class="section">
+<div class="container">
+  <div class="section-label">Section 04</div>
+  <h2 class="section-title">教科別 認知スキルプロファイル（レーダーチャート）</h2>
+  <p class="section-desc">
+    各教科が要求する6つの主要認知スキルの強度を可視化します。
+    形が近い教科は「相関が高い」＝同一スキル強化の恩恵を共有します。
+  </p>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:24px;">
+
+    <!-- 各教科レーダー -->
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+      <div style="font-weight:700;font-size:16px;color:var(--jpn);margin-bottom:12px;">📖 国語</div>
+      <svg viewBox="0 0 200 200" width="100%" style="max-width:200px;">
+        <defs>
+          <polygon id="grid" points="100,20 162,60 162,140 100,180 38,140 38,60"/>
+        </defs>
+        <!-- grid rings -->
+        <polygon points="100,60 140,84 140,116 100,140 60,116 60,84" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,40 152,70 152,130 100,160 48,130 48,70" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,20 164,62 164,138 100,180 36,138 36,62" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <!-- axes -->
+        <line x1="100" y1="100" x2="100" y2="20" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="100" y2="180" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <!-- 国語: 記述5, 資料4, 批判5, 論理5, 実生活5, 語彙5 -->
+        <!-- scaled: 5→20px from center(100,100), max radius=80 -->
+        <!-- axis: top=記述, TR=資料, BR=批判, B=論理, BL=実生活, TL=語彙 -->
+        <!-- top: 100,100-y; offset = (val/5)*80 -->
+        <!-- 記述5: (100, 20) -->
+        <!-- 資料4: (164-16=148*sin60...) recalc manually -->
+        <!-- Points for radar (val/5 * 80 from center 100,100): -->
+        <!-- top(N):   100, 100-(5/5*80)=100,20 -->
+        <!-- TR(NE):   100+(4/5*80*sin60)=100+55.4=155, 100-(4/5*80*cos60)=100-32=68 -->
+        <!-- BR(SE):   100+(5/5*80*sin60)=100+69.3=169, 100+(5/5*80*cos60)=100+40=140 -->
+        <!-- B(S):     100, 100+(5/5*80)=180 -->
+        <!-- BL(SW):   100-(5/5*80*sin60)=100-69.3=31, 100+(5/5*80*cos60)=140 -->
+        <!-- TL(NW):   100-(5/5*80*sin60)=31, 100-(5/5*80*cos60)=60 -->
+        <polygon
+          points="100,20 155,68 169,140 100,180 31,140 31,60"
+          fill="rgba(29,58,122,0.18)" stroke="var(--jpn)" stroke-width="2"/>
+        <!-- labels -->
+        <text x="100" y="14" text-anchor="middle" font-size="10" fill="var(--muted)">記述</text>
+        <text x="170" y="64" text-anchor="start"  font-size="10" fill="var(--muted)">資料</text>
+        <text x="170" y="148" text-anchor="start" font-size="10" fill="var(--muted)">批判</text>
+        <text x="100" y="193" text-anchor="middle" font-size="10" fill="var(--muted)">論理</text>
+        <text x="30"  y="148" text-anchor="end"   font-size="10" fill="var(--muted)">実生活</text>
+        <text x="30"  y="64"  text-anchor="end"   font-size="10" fill="var(--muted)">語彙</text>
+      </svg>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+      <div style="font-weight:700;font-size:16px;color:var(--eng);margin-bottom:12px;">🌐 英語</div>
+      <svg viewBox="0 0 200 200" width="100%" style="max-width:200px;">
+        <polygon points="100,60 140,84 140,116 100,140 60,116 60,84" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,40 152,70 152,130 100,160 48,130 48,70" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,20 164,62 164,138 100,180 36,138 36,62" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <line x1="100" y1="100" x2="100" y2="20" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="100" y2="180" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <!-- 英語: 記述5, 資料3, 批判4, 論理3, 実生活5, 語彙4 -->
+        <!-- 記述5: 100,20  資料3: 100+(3/5*80*.866)=141.6,100-(3/5*80*.5)=76  批判4: 100+(4/5*80*.866)=155,140  論理3:100,148  実生活5:31,140  語彙4:31+(4/5*16)..= -->
+        <!-- recalc:
+          N(記述5):   100, 20
+          NE(資料3):  100+41.6=142, 100-24=76
+          SE(批判4):  100+55.4=155, 100+32=132
+          S(論理3):   100, 100+48=148
+          SW(実生活5):100-69.3=31, 100+40=140
+          NW(語彙4):  100-55.4=45, 100-32=68
+        -->
+        <polygon
+          points="100,20 142,76 155,132 100,148 31,140 45,68"
+          fill="rgba(26,122,74,0.18)" stroke="var(--eng)" stroke-width="2"/>
+        <text x="100" y="14" text-anchor="middle" font-size="10" fill="var(--muted)">記述</text>
+        <text x="150" y="72" text-anchor="start"  font-size="10" fill="var(--muted)">資料</text>
+        <text x="162" y="140" text-anchor="start" font-size="10" fill="var(--muted)">批判</text>
+        <text x="100" y="162" text-anchor="middle" font-size="10" fill="var(--muted)">論理</text>
+        <text x="24"  y="148" text-anchor="end"   font-size="10" fill="var(--muted)">実生活</text>
+        <text x="38"  y="64"  text-anchor="end"   font-size="10" fill="var(--muted)">語彙</text>
+      </svg>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+      <div style="font-weight:700;font-size:16px;color:var(--mat);margin-bottom:12px;">🔢 数学</div>
+      <svg viewBox="0 0 200 200" width="100%" style="max-width:200px;">
+        <polygon points="100,60 140,84 140,116 100,140 60,116 60,84" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,40 152,70 152,130 100,160 48,130 48,70" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,20 164,62 164,138 100,180 36,138 36,62" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <line x1="100" y1="100" x2="100" y2="20" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="100" y2="180" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <!-- 数学: 記述4, 資料3, 批判4, 論理5, 実生活4, 語彙2 -->
+        <!--
+          N(記述4):   100, 36
+          NE(資料3):  142, 76
+          SE(批判4):  155, 132
+          S(論理5):   100, 20
+          SW(実生活4):45, 132
+          NW(語彙2):  72, 84
+        -->
+        <polygon
+          points="100,36 142,76 155,132 100,20 45,132 72,84"
+          fill="rgba(107,61,184,0.18)" stroke="var(--mat)" stroke-width="2"/>
+        <text x="100" y="14" text-anchor="middle" font-size="10" fill="var(--muted)">記述</text>
+        <text x="150" y="72" text-anchor="start"  font-size="10" fill="var(--muted)">資料</text>
+        <text x="162" y="140" text-anchor="start" font-size="10" fill="var(--muted)">批判</text>
+        <text x="100" y="193" text-anchor="middle" font-size="10" fill="var(--muted)">論理</text>
+        <text x="38"  y="140" text-anchor="end"   font-size="10" fill="var(--muted)">実生活</text>
+        <text x="64"  y="80"  text-anchor="end"   font-size="10" fill="var(--muted)">語彙</text>
+      </svg>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+      <div style="font-weight:700;font-size:16px;color:var(--sci);margin-bottom:12px;">🔬 理科</div>
+      <svg viewBox="0 0 200 200" width="100%" style="max-width:200px;">
+        <polygon points="100,60 140,84 140,116 100,140 60,116 60,84" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,40 152,70 152,130 100,160 48,130 48,70" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,20 164,62 164,138 100,180 36,138 36,62" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <line x1="100" y1="100" x2="100" y2="20" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="100" y2="180" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <!-- 理科: 記述4, 資料5, 批判4, 論理4, 実生活3, 語彙2 -->
+        <!--
+          N(記述4):   100,36
+          NE(資料5):  100+69.3=169,60
+          SE(批判4):  155,132
+          S(論理4):   100,36（from bottom→S軸100,180: 4/5*80=64→100,36  wait S=100,180-(4/5*80)=100,116）
+          actually S axis goes DOWN: S(論理4): 100, 100+(4/5*80)=100,164
+          SW(実生活3): 100-(3/5*80*.866)=58, 100+(3/5*80*.5)=124
+          NW(語彙2):  100-(2/5*80*.866)=72,100-(2/5*80*.5)=84
+        -->
+        <polygon
+          points="100,36 169,60 155,132 100,164 58,124 72,84"
+          fill="rgba(212,95,0,0.18)" stroke="var(--sci)" stroke-width="2"/>
+        <text x="100" y="14" text-anchor="middle" font-size="10" fill="var(--muted)">記述</text>
+        <text x="170" y="56" text-anchor="start"  font-size="10" fill="var(--muted)">資料</text>
+        <text x="162" y="140" text-anchor="start" font-size="10" fill="var(--muted)">批判</text>
+        <text x="100" y="180" text-anchor="middle" font-size="10" fill="var(--muted)">論理</text>
+        <text x="50"  y="130" text-anchor="end"   font-size="10" fill="var(--muted)">実生活</text>
+        <text x="64"  y="80"  text-anchor="end"   font-size="10" fill="var(--muted)">語彙</text>
+      </svg>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+      <div style="font-weight:700;font-size:16px;color:var(--soc);margin-bottom:12px;">🗺️ 社会</div>
+      <svg viewBox="0 0 200 200" width="100%" style="max-width:200px;">
+        <polygon points="100,60 140,84 140,116 100,140 60,116 60,84" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,40 152,70 152,130 100,160 48,130 48,70" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <polygon points="100,20 164,62 164,138 100,180 36,138 36,62" fill="none" stroke="#e0e8f4" stroke-width="1"/>
+        <line x1="100" y1="100" x2="100" y2="20" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="164" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="100" y2="180" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="138" stroke="#cdd5e0" stroke-width="1"/>
+        <line x1="100" y1="100" x2="36" y2="62" stroke="#cdd5e0" stroke-width="1"/>
+        <!-- 社会: 記述3, 資料5, 批判3, 論理4, 実生活5, 語彙3 -->
+        <!--
+          N(記述3):   100, 100-48=52
+          NE(資料5):  169,60
+          SE(批判3):  100+41.6=142, 100+24=124
+          S(論理4):   100, 164
+          SW(実生活5):31,140
+          NW(語彙3):  100-41.6=58, 76
+        -->
+        <polygon
+          points="100,52 169,60 142,124 100,164 31,140 58,76"
+          fill="rgba(155,35,53,0.18)" stroke="var(--soc)" stroke-width="2"/>
+        <text x="100" y="14" text-anchor="middle" font-size="10" fill="var(--muted)">記述</text>
+        <text x="172" y="56" text-anchor="start"  font-size="10" fill="var(--muted)">資料</text>
+        <text x="150" y="132" text-anchor="start" font-size="10" fill="var(--muted)">批判</text>
+        <text x="100" y="180" text-anchor="middle" font-size="10" fill="var(--muted)">論理</text>
+        <text x="22"  y="148" text-anchor="end"   font-size="10" fill="var(--muted)">実生活</text>
+        <text x="50"  y="72"  text-anchor="end"   font-size="10" fill="var(--muted)">語彙</text>
+      </svg>
+    </div>
+
+    <!-- 凡例 -->
+    <div style="background:var(--ice);border-radius:12px;padding:20px;display:flex;flex-direction:column;justify-content:center;gap:10px;">
+      <div style="font-weight:700;font-size:15px;color:var(--navy);margin-bottom:4px;">📐 チャートの読み方</div>
+      <div style="font-size:14px;color:var(--muted);">
+        各頂点が認知スキル軸。<strong>面積が大きい＝多くのスキルを高い水準で要求する</strong>教科。
+      </div>
+      <div style="font-size:14px;color:var(--muted);">
+        <strong>形が似た教科</strong>（国語と英語、理科と数学）は共有スキルが多く、
+        学習効果の相乗効果が高い。
+      </div>
+      <div style="margin-top:8px;padding:12px;background:#fff;border-radius:8px;font-size:14px;color:var(--navy);">
+        <strong>最大面積 = 国語</strong>（6スキル全て4〜5水準）<br>
+        国語が全5教科で最も横断的なスキルを要求していることを示す。
+      </div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SECTION 5 : 教員向け指導戦略
+══════════════════════════════════════ -->
+<section class="section" style="background:#fff;">
+<div class="container">
+  <div class="section-label">Section 05</div>
+  <h2 class="section-title">教員向け 教科横断指導戦略カード</h2>
+  <p class="section-desc">
+    相関分析の結果を踏まえた、教科担当者・学年団・IB コーディネーターへの具体的指導提言です。
+  </p>
+
+  <div class="strategy-grid">
+
+    <div class="strategy-card">
+      <div class="strategy-head" style="background:var(--jpn-l);">
+        <span style="font-size:22px;">📖</span>
+        <div>
+          <div style="color:var(--jpn);">国語担当者へ</div>
+          <div style="font-size:13px;color:var(--muted);font-weight:400;">英・数・社・理に波及する最重要教科</div>
+        </div>
+      </div>
+      <div class="strategy-body">
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>条件付き意見文（根拠→具体例→結論の型）を反復訓練。<strong>数学の証明・理科の考察・英作文の骨格</strong>と同一構造として意識させる</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>複数資料を統合して意見を書く問題（大問4型）は、社会・理科の記述回答フォーマットと接続して指導する</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>論説文の段落構造分析は「数学の論証の流れ」と対比させると両方の理解が深まる</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="strategy-card">
+      <div class="strategy-head" style="background:var(--eng-l);">
+        <span style="font-size:22px;">🌐</span>
+        <div>
+          <div style="color:var(--eng);">英語担当者へ</div>
+          <div style="font-size:13px;color:var(--muted);font-weight:400;">IB 効果が最も直接的に現れる教科</div>
+        </div>
+      </div>
+      <div class="strategy-body">
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>自由英作文（24語以上）の指導では、国語の「意見文の型」を英語に転写する形で教えると書ける量が増える</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>文化比較テキスト（日米・タイ等）は社会科・総合的な学習との連携で、背景知識を補完する</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>IB の Community Project・CAS 活動での英語発表経験が、英語大問3のスピーチ形式問題に直結する</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="strategy-card">
+      <div class="strategy-head" style="background:var(--mat-l);">
+        <span style="font-size:22px;">🔢</span>
+        <div>
+          <div style="color:var(--mat);">数学担当者へ</div>
+          <div style="font-size:13px;color:var(--muted);font-weight:400;">論証力が国語・理科に逆波及</div>
+        </div>
+      </div>
+      <div class="strategy-body">
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>証明問題の「仮定→論拠→結論」の書き方を、国語の論説文読解と並行して意識させる</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>北海道旗・カレンダー等の実生活文脈問題（大問2型）は、理科の実験設定・社会の統計読取と共通の「文脈理解→数式化」スキル</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>統計（中央値等）の指導は理科・社会のデータ読取訓練と合同で実施できる</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="strategy-card">
+      <div class="strategy-head" style="background:var(--sci-l);">
+        <span style="font-size:22px;">🔬</span>
+        <div>
+          <div style="color:var(--sci);">理科担当者へ</div>
+          <div style="font-size:13px;color:var(--muted);font-weight:400;">探究プロセスが数学・社会に波及</div>
+        </div>
+      </div>
+      <div class="strategy-body">
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>実験レポート（仮説→方法→結果→考察→結論）のサイクルを徹底することで、数学の論証・国語の論述に転用できる思考様式が身につく</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>グラフ読取・計算は数学と教材を共有することで両教科の定着効率が上がる</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>IB Sciences の Criterion B「探究」はそのまま公立入試理科の思考・記述問題に対応する。探究の「問い」を明示させる習慣が解答の質を上げる</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="strategy-card">
+      <div class="strategy-head" style="background:var(--soc-l);">
+        <span style="font-size:22px;">🗺️</span>
+        <div>
+          <div style="color:var(--soc);">社会担当者へ</div>
+          <div style="font-size:13px;color:var(--muted);font-weight:400;">資料統合と英語・国語を繋ぐ架け橋</div>
+        </div>
+      </div>
+      <div class="strategy-body">
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>複合資料問題（グラフ・地形図・写真・統計の組み合わせ）は情報の優先度判断を明示的に教える。理科のデータ分析と同一技能として位置づける</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>貿易・国際経済分野の授業を英語テキスト（英語大問の背景知識）と連携させることで両教科の定着が深まる</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow">▸</span>
+          <span>北方領土等の地域課題は、国語「まちづくり問題」・総合「地域探究」と横断テーマとして一体設計が効果的</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="strategy-card" style="border-color:var(--gold);background:linear-gradient(135deg,#fffbf0,#fff8e6);">
+      <div class="strategy-head" style="background:rgba(200,146,42,.12);">
+        <span style="font-size:22px;">🌍</span>
+        <div>
+          <div style="color:var(--gold);">IBコーディネーター・全教科へ</div>
+          <div style="font-size:13px;color:var(--muted);font-weight:400;">横断ユニット設計の最優先課題</div>
+        </div>
+      </div>
+      <div class="strategy-body">
+        <div class="strategy-item">
+          <span class="arrow" style="color:var(--gold);">▸</span>
+          <span><strong>「記述表現力」を軸とした学年横断ルーブリック</strong>を策定。国語・英語・理科・数学の記述問題に共通の評価基準を設け、教科間で相互参照する</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow" style="color:var(--gold);">▸</span>
+          <span>Personal Project の中間発表を入試記述問題と同じ「根拠→具体例→結論」フォーマットで課すことで、IB課題と入試対策を一体化できる</span>
+        </div>
+        <div class="strategy-item">
+          <span class="arrow" style="color:var(--gold);">▸</span>
+          <span>「実生活文脈×複数資料統合」の横断テーマ（例：環境・地域経済・文化比較）を設計すると、理・社・英・国が同時に伸びる</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+
+<!-- ══════════════════════════════════════
+     SECTION 6 : 優先度マトリクス
+══════════════════════════════════════ -->
+<section class="section">
+<div class="container">
+  <div class="section-label">Section 06</div>
+  <h2 class="section-title">指導優先度マトリクス — 効果波及の大きさ順</h2>
+  <p class="section-desc">
+    「この指導にどれだけ時間をかけるべきか」を、入試での出現頻度と教科横断波及度の掛け算で優先順位化しました。
+  </p>
+
+  <div style="overflow-x:auto;">
+  <table class="ptable" style="min-width:580px;">
+    <thead>
+      <tr>
+        <th style="min-width:220px;">指導スキル</th>
+        <th>波及教科数</th>
+        <th>入試出現頻度</th>
+        <th>IB親和性</th>
+        <th>総合優先度</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>📝 記述・論述表現力の型化</td>
+        <td style="text-align:center;">全5教科</td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+        <td style="text-align:center;font-weight:700;font-size:18px;color:var(--cobalt);">S</td>
+      </tr>
+      <tr>
+        <td>🔗 論理的構造の意識化（接続詞・根拠）</td>
+        <td style="text-align:center;">国・数・理・社</td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;font-weight:700;font-size:18px;color:var(--cobalt);">A</td>
+      </tr>
+      <tr>
+        <td>📊 複数資料の統合読取と判断</td>
+        <td style="text-align:center;">全5教科</td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;font-weight:700;font-size:18px;color:var(--cobalt);">A</td>
+      </tr>
+      <tr>
+        <td>🌍 実生活・社会文脈への接続意識</td>
+        <td style="text-align:center;">国・英・数・社</td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+        <td style="text-align:center;font-weight:700;font-size:18px;color:var(--cobalt);">A</td>
+      </tr>
+      <tr>
+        <td>🔍 探究プロセスの言語化（仮説→結論）</td>
+        <td style="text-align:center;">理・数・社</td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+        <td style="text-align:center;font-weight:700;font-size:18px;color:var(--sky);">B</td>
+      </tr>
+      <tr>
+        <td>🌐 異文化・多様性の比較的理解</td>
+        <td style="text-align:center;">英・社</td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div></td>
+        <td style="text-align:center;font-weight:700;font-size:18px;color:var(--sky);">B</td>
+      </tr>
+      <tr>
+        <td>✍️ 語彙・正確な表現の定着</td>
+        <td style="text-align:center;">国・英</td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star off">★</span><span class="star off">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;font-weight:700;font-size:18px;color:var(--muted);">C</td>
+      </tr>
+      <tr>
+        <td>🔢 数量・図形の概念的理解</td>
+        <td style="text-align:center;">数・理・社</td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;"><div class="impact"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star off">★</span><span class="star off">★</span></div></td>
+        <td style="text-align:center;font-weight:700;font-size:18px;color:var(--muted);">C</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--muted);margin-top:8px;">
+    優先度 S：最優先（全教科波及×高頻度×IB完全一致）　A：重点強化　B：IB特有の強みを活かす　C：教科固有の強化
+  </p>
+</div>
+</section>
+
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p>
+    本資料は令和8年度北海道公立高等学校入学者選抜学力検査問題（2026年3月4日実施）の問題構造分析と、
+    IB-MYP の ATL スキルフレームワーク・文部科学省新学習指導要領をもとに作成した教科横断相関分析レポートです。
+  </p>
+  <p style="margin-top:6px;">
+    相関係数相当値は、共有スキルの種類・出現強度・問題構造類似度をもとにした専門家評価ベースの推定値です。
+    実証的な統計解析に基づくものではありません。
+  </p>
+  <p style="margin-top:6px;">
+    参照：北海道立総合教育センター公開問題 ／ IB-MYP: From Principles into Practice ／ 文部科学省学習指導要領（R3全面実施）
+    ／ 分析・制作：Educational Data Analyst / Assessment Specialist · 2026.03
+  </p>
+</footer>
+
+</body>
+</html>
